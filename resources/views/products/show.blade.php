@@ -48,7 +48,12 @@ btn-primary btn-sm">&larr; Back</a>
  {{ $product->description }}
  </div>
  </div>
- 
+ @if($product->image)
+ <div class="mb-3">
+ <label class="form-label">Product Image</label><br>
+ <img src="{{ asset('storage/' . $product->image) }}" alt="Product Image" width="200">
+ </div>
+ @endif
  </div>
  </div>
  </div> 

@@ -5,9 +5,11 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+
 class ProductController extends Controller
 {
  /**
@@ -31,6 +33,7 @@ class ProductController extends Controller
  */
  public function store(Request $request) : RedirectResponse
  {
+
  $request->validate([
  'code' => 'required|unique:products,code',
  'name' => 'required',
@@ -55,6 +58,24 @@ class ProductController extends Controller
  Product::create($data);
 
  return redirect()->route('products.index')->with('success', 'Product created successfully.');
+
+ $validated = $request->validate([
+ 'code' => 'required',
+ 'name' => 'required',
+ 'quantity' => 'required|integer',
+ 'price' => 'required|numeric',
+ 'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+ ]);
+
+ if ($request->hasFile('image')) {
+ $validated['image'] = $request->file('image')->store('products', 'public');
+ }
+
+ Product::create($validated);
+
+ return redirect()->route('products.index')
+ ->withSuccess('New product is added successfully.');
+
  }
  /**
  * Display the specified resource.
@@ -75,6 +96,7 @@ class ProductController extends Controller
  */
  public function update(Request $request, Product $product) : RedirectResponse
  {
+
  $request->validate([
  'code' => 'required|unique:products,code,' . $product->id,
  'name' => 'required',
@@ -104,6 +126,25 @@ class ProductController extends Controller
  $product->update($data);
 
  return redirect()->route('products.index')->with('success', 'Product updated successfully.');
+
+ $validated = $request->validate([
+ 'code' => 'required',
+ 'name' => 'required',
+ 'quantity' => 'required|integer',
+ 'price' => 'required|numeric',
+ 'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+ ]);
+
+ if ($request->hasFile('image')) {
+ // Optionally delete old image here
+ $validated['image'] = $request->file('image')->store('products', 'public');
+ }
+
+ $product->update($validated);
+
+ return redirect()->route('products.index')
+ ->withSuccess('Product is updated successfully.');
+
  }
  /**
  * Remove the specified resource from storage.
