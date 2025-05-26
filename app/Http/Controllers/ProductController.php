@@ -5,6 +5,7 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 class ProductController extends Controller
 {
  /**
@@ -26,10 +27,22 @@ class ProductController extends Controller
  /**
  * Store a newly created resource in storage.
  */
- public function store(StoreProductRequest $request) : 
-RedirectResponse
+ public function store(Request $request) : RedirectResponse
  {
- Product::create($request->validated());
+ $validated = $request->validate([
+ 'code' => 'required',
+ 'name' => 'required',
+ 'quantity' => 'required|integer',
+ 'price' => 'required|numeric',
+ 'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+ ]);
+
+ if ($request->hasFile('image')) {
+ $validated['image'] = $request->file('image')->store('products', 'public');
+ }
+
+ Product::create($validated);
+
  return redirect()->route('products.index')
  ->withSuccess('New product is added successfully.');
  }
@@ -50,11 +63,24 @@ RedirectResponse
  /**
  * Update the specified resource in storage.
  */
- public function update(UpdateProductRequest $request, Product
-$product) : RedirectResponse
+ public function update(Request $request, Product $product) : RedirectResponse
  {
- $product->update($request->validated());
- return redirect()->back()
+ $validated = $request->validate([
+ 'code' => 'required',
+ 'name' => 'required',
+ 'quantity' => 'required|integer',
+ 'price' => 'required|numeric',
+ 'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+ ]);
+
+ if ($request->hasFile('image')) {
+ // Optionally delete old image here
+ $validated['image'] = $request->file('image')->store('products', 'public');
+ }
+
+ $product->update($validated);
+
+ return redirect()->route('products.index')
  ->withSuccess('Product is updated successfully.');
  }
  /**
