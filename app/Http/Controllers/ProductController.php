@@ -5,7 +5,11 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+
 class ProductController extends Controller
 {
  /**
@@ -29,6 +33,32 @@ class ProductController extends Controller
  */
  public function store(Request $request) : RedirectResponse
  {
+
+ $request->validate([
+ 'code' => 'required|unique:products,code',
+ 'name' => 'required',
+ 'quantity' => 'required|integer',
+ 'price' => 'required|numeric',
+ 'description' => 'nullable',
+ 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+ ]);
+
+ $data = [
+ 'code' => $request->code,
+ 'name' => $request->name,
+ 'quantity' => $request->quantity,
+ 'price' => $request->price,
+ 'description' => $request->description,
+ ];
+
+ if ($request->hasFile('image')) {
+ $data['image'] = $request->file('image')->store('products', 'public');
+ }
+
+ Product::create($data);
+
+ return redirect()->route('products.index')->with('success', 'Product created successfully.');
+
  $validated = $request->validate([
  'code' => 'required',
  'name' => 'required',
@@ -45,6 +75,7 @@ class ProductController extends Controller
 
  return redirect()->route('products.index')
  ->withSuccess('New product is added successfully.');
+
  }
  /**
  * Display the specified resource.
@@ -65,6 +96,37 @@ class ProductController extends Controller
  */
  public function update(Request $request, Product $product) : RedirectResponse
  {
+
+ $request->validate([
+ 'code' => 'required|unique:products,code,' . $product->id,
+ 'name' => 'required',
+ 'quantity' => 'required|integer',
+ 'price' => 'required|numeric',
+ 'description' => 'nullable',
+ 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+ ]);
+
+ $data = [
+ 'code' => $request->code,
+ 'name' => $request->name,
+ 'quantity' => $request->quantity,
+ 'price' => $request->price,
+ 'description' => $request->description,
+ ];
+
+ if ($request->hasFile('image')) {
+ if ($product->image) {
+ Storage::disk('public')->delete($product->image);
+ }
+ $data['image'] = $request->file('image')->store('products', 'public');
+ } else {
+ $data['image'] = $product->image;
+ }
+
+ $product->update($data);
+
+ return redirect()->route('products.index')->with('success', 'Product updated successfully.');
+
  $validated = $request->validate([
  'code' => 'required',
  'name' => 'required',
@@ -82,6 +144,7 @@ class ProductController extends Controller
 
  return redirect()->route('products.index')
  ->withSuccess('Product is updated successfully.');
+
  }
  /**
  * Remove the specified resource from storage.
